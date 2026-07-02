@@ -1,7 +1,9 @@
+-- FantiHub v9.1 (Mobile/PC Full Support + Teleport Tool)
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 
@@ -42,7 +44,7 @@ local function CreateBtn(text, pos, parent, size)
     return b
 end
 
--- ===== FOV КРУГ (ТОЧНО ПО ЦЕНТРУ) =====
+-- ===== FOV КРУГ =====
 local FOVContainer = Instance.new("Frame")
 FOVContainer.Size = UDim2.new(1,0,1,0)
 FOVContainer.BackgroundTransparency = 1
@@ -51,10 +53,10 @@ FOVContainer.Parent = ScreenGui
 local FOVCircle = Instance.new("Frame")
 FOVCircle.Size = UDim2.new(0, AimbotSettings.FOV*2, 0, AimbotSettings.FOV*2)
 FOVCircle.Position = UDim2.new(0.5, -AimbotSettings.FOV, 0.5, -AimbotSettings.FOV)
-FOVCircle.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+FOVCircle.BackgroundColor3 = Color3.fromRGB(255,215,0)
 FOVCircle.BackgroundTransparency = 0.7
 FOVCircle.BorderSizePixel = 2
-FOVCircle.BorderColor3 = Color3.fromRGB(255, 215, 0)
+FOVCircle.BorderColor3 = Color3.fromRGB(255,215,0)
 FOVCircle.Visible = false
 FOVCircle.Parent = FOVContainer
 CreateCorner(FOVCircle, 999)
@@ -62,7 +64,7 @@ CreateCorner(FOVCircle, 999)
 local FOVFill = Instance.new("Frame")
 FOVFill.Size = UDim2.new(1,-4,1,-4)
 FOVFill.Position = UDim2.new(0,2,0,2)
-FOVFill.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+FOVFill.BackgroundColor3 = Color3.fromRGB(255,215,0)
 FOVFill.BackgroundTransparency = 0.85
 FOVFill.Parent = FOVCircle
 CreateCorner(FOVFill, 999)
@@ -77,7 +79,7 @@ local function updateFOV()
     end
 end
 
--- ===== STATS FRAME (СЛЕВА СВЕРХУ + ПЕРЕТАСКИВАНИЕ) =====
+-- ===== STATS =====
 local StatsFrame = Instance.new("Frame")
 StatsFrame.Size = UDim2.new(0, 180, 0, 55)
 StatsFrame.Position = UDim2.new(0.02, 0, 0.08, 0)
@@ -121,10 +123,10 @@ SPlayers.Font = Enum.Font.GothamBold
 SPlayers.TextXAlignment = Enum.TextXAlignment.Left
 SPlayers.Parent = StatsFrame
 
--- Перетаскивание StatsFrame
+-- Перетаскивание StatsFrame (Touch + PC)
 local statsDrag = {isDragging = false, start = nil, startPos = nil}
 STitle.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
         statsDrag.isDragging = true
         statsDrag.start = i.Position
         statsDrag.startPos = StatsFrame.Position
@@ -136,7 +138,7 @@ STitle.InputEnded:Connect(function()
     StatsFrame.ZIndex = 100
 end)
 UserInputService.InputChanged:Connect(function(i)
-    if statsDrag.isDragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+    if statsDrag.isDragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local d = i.Position - statsDrag.start
         local vx, vy = Camera.ViewportSize.X or 1920, Camera.ViewportSize.Y or 1080
         local nx = math.max(0, math.min(1-180/vx, (statsDrag.startPos.X.Scale*vx + statsDrag.startPos.X.Offset + d.X)/vx))
@@ -167,7 +169,7 @@ end
 MakeToggle("☑ FPS", 0.08, "ShowFPS")
 MakeToggle("☑ Players", 0.42, "ShowPlayers")
 
--- ===== FOV SLIDER =====
+-- ===== FOV SLIDER (С ПОДДЕРЖКОЙ TOUCH) =====
 local FOVSlider = Instance.new("Frame")
 FOVSlider.Size = UDim2.new(0,220,0,80)
 FOVSlider.Position = UDim2.new(0.5,-110,0.5,-40)
@@ -223,13 +225,17 @@ local ShowFOVBtn = CreateBtn("☑ Show FOV", UDim2.new(0.05,0,0.7,0), FOVSlider,
 
 local isSliding = false
 SliderThumb.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then isSliding = true end
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        isSliding = true
+    end
 end)
 SliderThumb.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then isSliding = false end
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        isSliding = false
+    end
 end)
 UserInputService.InputChanged:Connect(function(i)
-    if isSliding and i.UserInputType == Enum.UserInputType.MouseMovement then
+    if isSliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local p = math.max(0, math.min(1, (i.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X))
         local f = math.max(50, math.min(500, math.round(50 + p*450)))
         AimbotSettings.FOV = f
@@ -291,8 +297,8 @@ OText.Parent = OpenBtn
 
 -- ===== MAIN MENU =====
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0,480,0,420)
-MainFrame.Position = UDim2.new(0.5,-240,0.5,-210)
+MainFrame.Size = UDim2.new(0,480,0,550) -- Увеличил высоту для новой кнопки
+MainFrame.Position = UDim2.new(0.5,-240,0.5,-275)
 MainFrame.BackgroundColor3 = Color3.fromRGB(18,18,22)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 1
@@ -354,7 +360,7 @@ Div.BackgroundTransparency = 0.7
 Div.Parent = MainFrame
 
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-40,0,240)
+Content.Size = UDim2.new(1,-40,0,360) -- Увеличил для новой кнопки
 Content.Position = UDim2.new(0,20,0,85)
 Content.BackgroundTransparency = 1
 Content.Parent = MainFrame
@@ -371,7 +377,7 @@ Greeting.TextXAlignment = Enum.TextXAlignment.Left
 Greeting.Parent = Content
 
 local Grid = Instance.new("Frame")
-Grid.Size = UDim2.new(1,0,0,200)
+Grid.Size = UDim2.new(1,0,0,320) -- Увеличил сетку
 Grid.Position = UDim2.new(0,0,0,30)
 Grid.BackgroundTransparency = 1
 Grid.Parent = Content
@@ -397,12 +403,16 @@ local AimbotBtn = MakeMainBtn("Aimbot", 0, 0, 200, 55)
 local ESPBtn = MakeMainBtn("ESP", 210, 0, 200, 55)
 local StatsBtn = MakeMainBtn("Stats", 0, 65, 200, 55)
 local ResetBtn = MakeMainBtn("Reset Role", 210, 65, 200, 55)
-local UnloadBtn = MakeMainBtn("UNLOAD CHEAT", 140, 135, 200, 55, Color3.fromRGB(200,0,0))
+-- ===== НОВАЯ КНОПКА TP TOOL =====
+local TPToolBtn = MakeMainBtn("🔧 TP Tool", 0, 130, 410, 50)
+TPToolBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+TPToolBtn.BorderColor3 = Color3.fromRGB(0, 150, 255)
+local UnloadBtn = MakeMainBtn("UNLOAD CHEAT", 105, 190, 200, 55, Color3.fromRGB(200,0,0))
 UnloadBtn.BorderColor3 = Color3.fromRGB(255,0,0)
 
 local Footer = Instance.new("Frame")
 Footer.Size = UDim2.new(1,-40,0,35)
-Footer.Position = UDim2.new(0,20,0,340)
+Footer.Position = UDim2.new(0,20,0,470) -- Сдвинул футер
 Footer.BackgroundTransparency = 1
 Footer.Parent = MainFrame
 
@@ -435,6 +445,31 @@ FText2.TextSize = 11
 FText2.Font = Enum.Font.Gotham
 FText2.TextXAlignment = Enum.TextXAlignment.Right
 FText2.Parent = Footer
+
+-- ===== ФУНКЦИЯ TELEPORT TOOL (из Infinity Yield) =====
+local function TeleportTool()
+    local TpTool = Instance.new("Tool")
+    TpTool.Name = "Teleport Tool"
+    TpTool.RequiresHandle = false
+    TpTool.Parent = Player:FindFirstChildOfClass("Backpack")
+    TpTool.Activated:Connect(function()
+        local rootPart = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+        
+        local targetPos = Mouse.Hit
+        if not targetPos then return end
+        
+        rootPart.CFrame = CFrame.new(targetPos.X, targetPos.Y + 3, targetPos.Z)
+        
+        -- Сбрасываем скорость
+        for _, v in ipairs(Player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Velocity = Vector3.new(0, 0, 0)
+                v.RotVelocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end)
+end
 
 -- ===== FUNCTIONS =====
 local function hasGun()
@@ -548,18 +583,41 @@ AimbotBtn.MouseButton1Click:Connect(function()
     updateFOV()
 end)
 
-AimbotBtn.MouseButton2Click:Connect(function()
+-- ===== ОТКРЫТИЕ FOV SLIDER (НА ТЕЛЕФОНЕ - ДОЛГИЙ КЛИК, НА ПК - ПРАВЫЙ КЛИК) =====
+local function toggleFOVSlider()
     FOVSlider.Visible = not FOVSlider.Visible
     if FOVSlider.Visible then
         local pos = AimbotBtn.AbsolutePosition
         local size = AimbotBtn.AbsoluteSize
-        FOVSlider.Position = UDim2.new(0, pos.X+size.X/2-110, 0, pos.Y+size.Y+5)
-        local p = (AimbotSettings.FOV-50)/450
-        SliderFill.Size = UDim2.new(p,0,1,0)
-        SliderThumb.Position = UDim2.new(p,-8,0.5,-8)
-        SliderLabel.Text = "FOV: "..AimbotSettings.FOV
+        FOVSlider.Position = UDim2.new(0, pos.X + size.X/2 - 110, 0, pos.Y + size.Y + 5)
+        local p = (AimbotSettings.FOV - 50) / 450
+        SliderFill.Size = UDim2.new(p, 0, 1, 0)
+        SliderThumb.Position = UDim2.new(p, -8, 0.5, -8)
+        SliderLabel.Text = "FOV: " .. AimbotSettings.FOV
         FOVVal.Text = AimbotSettings.FOV
         ShowFOVBtn.Text = AimbotSettings.ShowFOV and "☑ Show FOV" or "☐ Show FOV"
+    end
+end
+
+-- ПК: правый клик
+AimbotBtn.MouseButton2Click:Connect(toggleFOVSlider)
+
+-- ТЕЛЕФОН: долгий нажим (0.5 секунды)
+local holdTimer = nil
+AimbotBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        holdTimer = task.delay(0.5, function()
+            toggleFOVSlider()
+        end)
+    end
+end)
+
+AimbotBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        if holdTimer then
+            task.cancel(holdTimer)
+            holdTimer = nil
+        end
     end
 end)
 
@@ -605,13 +663,44 @@ StatsBtn.MouseButton1Click:Connect(function()
     StatsFrame.Visible = statsEnabled
 end)
 
-StatsBtn.MouseButton2Click:Connect(function()
+-- ===== STATS SELECT (ПК: правый клик, Телефон: долгий клик) =====
+local function toggleStatsSelect()
     StatsSelect.Visible = not StatsSelect.Visible
     if StatsSelect.Visible then
         local pos = StatsBtn.AbsolutePosition
         local size = StatsBtn.AbsoluteSize
-        StatsSelect.Position = UDim2.new(0, pos.X+size.X/2-75, 0, pos.Y+size.Y+5)
+        StatsSelect.Position = UDim2.new(0, pos.X + size.X/2 - 75, 0, pos.Y + size.Y + 5)
     end
+end
+
+StatsBtn.MouseButton2Click:Connect(toggleStatsSelect)
+
+local statsHoldTimer = nil
+StatsBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        statsHoldTimer = task.delay(0.5, function()
+            toggleStatsSelect()
+        end)
+    end
+end)
+
+StatsBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        if statsHoldTimer then
+            task.cancel(statsHoldTimer)
+            statsHoldTimer = nil
+        end
+    end
+end)
+
+-- ===== TP TOOL ОБРАБОТЧИК =====
+TPToolBtn.MouseButton1Click:Connect(function()
+    TeleportTool()
+    TPToolBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    TPToolBtn.BorderColor3 = Color3.fromRGB(0, 255, 0)
+    task.wait(0.3)
+    TPToolBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    TPToolBtn.BorderColor3 = Color3.fromRGB(0, 150, 255)
 end)
 
 ResetBtn.MouseButton1Click:Connect(function()
@@ -648,42 +737,49 @@ UserInputService.InputBegan:Connect(function(i)
     if i.KeyCode == Enum.KeyCode.RightShift then ToggleMenu() end
 end)
 
--- ===== DRAGGING =====
-local dragData = {isDragging=false, start=nil, startPos=nil}
-OpenBtn.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragData.isDragging = true
-        dragData.start = i.Position
-        dragData.startPos = OpenBtn.Position
-    end
-end)
-OpenBtn.InputEnded:Connect(function() dragData.isDragging = false end)
-UserInputService.InputChanged:Connect(function(i)
-    if dragData.isDragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local d = i.Position - dragData.start
-        local vx, vy = Camera.ViewportSize.X or 1920, Camera.ViewportSize.Y or 1080
-        local nx = math.max(0, math.min(1-50/vx, (dragData.startPos.X.Scale*vx + dragData.startPos.X.Offset + d.X)/vx))
-        local ny = math.max(0, math.min(1-50/vy, (dragData.startPos.Y.Scale*vy + dragData.startPos.Y.Offset + d.Y)/vy))
-        OpenBtn.Position = UDim2.new(nx,0,ny,0)
-    end
-end)
+-- ===== DRAGGING (ПК + ТЕЛЕФОН) =====
+local function SetupDragging(element, sizeX, sizeY)
+    local dragData = {isDragging = false, start = nil, startPos = nil}
+    
+    element.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragData.isDragging = true
+            dragData.start = i.Position
+            dragData.startPos = element.Position
+            element.ZIndex = 50
+        end
+    end)
+    
+    element.InputEnded:Connect(function()
+        dragData.isDragging = false
+        element.ZIndex = 1
+    end)
+    
+    UserInputService.InputChanged:Connect(function(i)
+        if dragData.isDragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local delta = i.Position - dragData.start
+            local vx, vy = Camera.ViewportSize.X or 1920, Camera.ViewportSize.Y or 1080
+            local nx = math.max(0, math.min(1 - sizeX/vx, (dragData.startPos.X.Scale * vx + dragData.startPos.X.Offset + delta.X) / vx))
+            local ny = math.max(0, math.min(1 - sizeY/vy, (dragData.startPos.Y.Scale * vy + dragData.startPos.Y.Offset + delta.Y) / vy))
+            element.Position = UDim2.new(nx, 0, ny, 0)
+        end
+    end)
+end
 
-local menuDrag = {isDragging=false, start=nil, startPos=nil}
-MainFrame.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 and i.Position.Y > 0 and i.Position.Y < 70 then
-        menuDrag.isDragging = true
-        menuDrag.start = i.Position
-        menuDrag.startPos = MainFrame.Position
-    end
-end)
-MainFrame.InputEnded:Connect(function() menuDrag.isDragging = false end)
-UserInputService.InputChanged:Connect(function(i)
-    if menuDrag.isDragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local d = i.Position - menuDrag.start
-        local vx, vy = Camera.ViewportSize.X or 1920, Camera.ViewportSize.Y or 1080
-        local nx = math.max(0, math.min(1-480/vx, (menuDrag.startPos.X.Scale*vx + menuDrag.startPos.X.Offset + d.X)/vx))
-        local ny = math.max(0, math.min(1-420/vy, (menuDrag.startPos.Y.Scale*vy + menuDrag.startPos.Y.Offset + d.Y)/vy))
-        MainFrame.Position = UDim2.new(nx,0,ny,0)
+SetupDragging(OpenBtn, 50, 50)
+SetupDragging(MainFrame, 480, 550)
+
+local menuOpen = false
+-- Закрытие меню при клике вне
+UserInputService.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        if menuOpen then
+            local o = GuiService:GetGuiObjectAtPosition(i.Position)
+            if not o or not (o:IsDescendantOf(MainFrame) or o == MainFrame or o:IsDescendantOf(OpenBtn) or o == OpenBtn) then
+                menuOpen = false
+                MainFrame.Visible = false
+            end
+        end
     end
 end)
 
